@@ -8,7 +8,8 @@ const config = {
     options: {
         encrypt: true, // Si usas Azure SQL, deberías dejarlo en true
         enableArithAbort: true,
-        trustServerCertificate: true // Agrega esta línea para desactivar la verificación del certificado
+        trustServerCertificate: true, // Agrega esta línea para desactivar la verificación del certificado
+        connectTimeout: 30000 // Aumenta el tiempo de espera a 30 segundos
     }
 };
 
