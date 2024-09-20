@@ -55,7 +55,7 @@ app.get('/clientes/:customerId', async (req, res) => { //busca un customer por I
 app.get('/ordenes', async (req, res) => { //el endpoint es clientes con un get 
     try {
         const pool = await poolPromise;
-        const result = await pool.request().query('SELECT h.Customer, h.Sales_Order, h.Order_Date, h.Promised_Date, c.Name FROM SO_Header h JOIN Customer c ON h.Customer = c.Customer ORDER BY h.Customer, h.Sales_Order;');
+        const result = await pool.request().query('SELECT h.Customer, h.Sales_Order, h.Order_Date, h.Promised_Date, h.Status AS Order_Status, c.Status AS Customer_Status, c.Name FROM SO_Header h JOIN Customer c ON h.Customer = c.Customer ORDER BY h.Customer, h.Sales_Order;');
         res.json(result.recordset);
     } catch (err) {
         res.status(500).send(err.message);
@@ -619,6 +619,83 @@ app.get('/search', async (req, res) => {
       res.status(500).send(err.message);
     }
   });
+
+////////////////////////PEDIDOS_MEJORADOS/////////////////////////////////////////////////////////////////////
+app.get('/pedidos/:sales_orderId', async (req, res) => { //busca un customer por ID
+    const sales_orderId = req.params.sales_orderId;
+    const query = `
+        SELECT 
+    SOH.Sales_Order,
+    SOH.Customer,
+    SOH.Order_Date,
+    SOH.Promised_Date,
+    SOH.Status,
+    SOD.Order_Qty,
+    SOD.Ext_Description,
+    SOD.Material,
+    C.Name
+FROM 
+    SO_Header SOH
+JOIN 
+    SO_Detail SOD ON SOH.Sales_Order = SOD.Sales_Order
+JOIN 
+    Customer C ON SOH.Customer = C.Customer
+WHERE 
+    SOH.Sales_Order = @sales_orderId;
+    `;
+    try {
+        const pool = await poolPromise;
+        const result = await pool.request()
+            .input('sales_orderId', sql.VarChar, sales_orderId)
+            .query(query);
+        res.json(result.recordset);
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+//////////////////////////endpoint nuevo para distribuidores/////////////////////////////////////
+
+app.get('/distribuidoresov/:contact_name_Id', async (req, res) => { //busca un customer por ID
+    const contact_name_Id = req.params.contact_name_Id;
+    const query = `
+    SELECT
+    c.Customer,
+    c.Name AS Customer_Name,
+    c.Sales_Code,
+    c.Pricing_Level,
+    a.City,
+    a.State,
+    soh.Sales_Order,
+    soh.Status,
+    soh.Order_Date,
+    sod.Total_Price,
+    con.Contact_Name
+FROM
+    Customer c
+JOIN
+    Address a ON c.Customer = a.Customer
+JOIN
+    SO_Header soh ON c.Customer = soh.Customer
+JOIN
+    SO_Detail sod ON soh.Sales_Order = sod.Sales_Order
+JOIN
+    Contact con ON c.Customer = con.Customer
+WHERE
+    c.Name = @contact_name_Id 
+ORDER BY
+    c.Customer;    
+    `;
+    try {
+        const pool = await poolPromise;
+        const result = await pool.request()
+            .input('contact_name_Id', sql.VarChar, contact_name_Id)
+            .query(query);
+        res.json(result.recordset);
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
 app.listen(port, () => {
     console.log(`Servidor corriendo en http://localhost:${port}`); //el app esta corriendo en el puerto 3000
 });
