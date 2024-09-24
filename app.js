@@ -695,6 +695,16 @@ ORDER BY
         res.status(500).send(err.message);
     }
 });
+///////pedidillos jashdjashd que burro hice un endpoint que no era////////////////////////////////////////////////////
+app.get('/pedidillos', async (req, res) => { //el endpoint es clientes con un get 
+    try {
+        const pool = await poolPromise;
+        const result = await pool.request().query('SELECT SOH.Sales_Order,SOH.Customer, SOH.Order_Date, SOH.Promised_Date, SOH.Status, SOD.Order_Qty, SOD.Ext_Description, SOD.Material, C.Name FROM SO_Header SOH JOIN SO_Detail SOD ON SOH.Sales_Order = SOD.Sales_Order JOIN Customer C ON SOH.Customer = C.Customer');
+        res.json(result.recordset);
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
 
 app.listen(port, () => {
     console.log(`Servidor corriendo en http://localhost:${port}`); //el app esta corriendo en el puerto 3000
